@@ -1,6 +1,6 @@
 import cv2
 
-video_file = "../Show1/Resource/Scene.mp4"                 # 동영상 파일 경로
+video_file = "../Show/Resource/Scene.mp4"                 # 동영상 파일 경로
 
 cap = cv2.VideoCapture(video_file)                  # 동영상 캡처 객체 생성
 if cap.isOpened():                                  # 캡처 객체 초기화 확인
