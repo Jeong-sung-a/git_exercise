@@ -1,4 +1,3 @@
-import numpy as np
 import cv2
 
 # 얼굴 검출을 위한 캐스케이드 분류기 생성
