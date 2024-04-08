@@ -1,41 +1,31 @@
-import numpy as np
-import dlib
 import cv2
+import os, glob
 
-EYES = list(range(36, 48))
+detector = cv2.FaceDetectorYN.create("../FaceDetection/Resource/face_detection_yunet_2023mar.onnx", "", (0, 0))
 
-frame_width = 640
-frame_height = 480
+eye_cascPath = "../FaceDetection/Resource/haarcascade_eye_tree_eyeglasses.xml"  #eye detect model
+eyeCascade = cv2.CascadeClassifier(eye_cascPath)
 
-raw_image = cv2.imread('../FaceDetection/Resource/girl.jpg')  # -- 이미지 경로
+base_dir = './faces'
+dirs = [d for d in glob.glob(base_dir) if os.path.isdir(d)]
+for dir in dirs:
+    files = glob.glob(dir+'/*.jpg')
+    print('\t path:%s, %dfiles'%(dir, len(files)))
+    for file in files:
+        image_cv2_yunet = cv2.imread(file)
+        gray = cv2.cvtColor(image_cv2_yunet, cv2.COLOR_BGR2GRAY)
+        height, width, _ = image_cv2_yunet.shape
+        detector.setInputSize((width, height))
+        _, faces = detector.detect(image_cv2_yunet)
+        for(x1, y1, w, h, x_re, y_re, x_le, y_le, x_nt, y_nt, x_rcm, y_rcm, x_lcm, y_lcm, extra) in faces:
+            roi_gray = gray[int(y1):int(y1 + h), int(x1):int(x1 + w)]
+            roi_color = image_cv2_yunet[int(y1):int(y1 + h), int(x1):int(x1 + w)]
 
-face_cascade_name = '../FaceDetection/Resource/haarcascade_frontalface_default.xml'  # -- 본인 환경에 맞게 변경할 것
-face_cascade = cv2.CascadeClassifier()
-if not face_cascade.load(cv2.samples.findFile(face_cascade_name)):
-    print('--(!)Error loading face cascade')
-    exit(0)
+            eyes = eyeCascade.detectMultiScale(roi_gray)
 
-predictor_file = '../FaceDetection/Resource/shape_predictor_81_face_landmarks.dat'  # -- 본인 환경에 맞게 변경할 것
-predictor = dlib.shape_predictor(predictor_file)
+            for (ex, ey, ew, eh) in eyes:
+                cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 255), 2)
 
-image = cv2.resize(raw_image, (frame_width, frame_height))
-faces = face_cascade.detectMultiScale(image)
-
-# - detect face area
-for (x, y, w, h) in faces:
-    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    rect = dlib.rectangle(int(x), int(y), int(x + w), int(y + h))
-
-    # - detect eye area
-    points = np.matrix([[p.x, p.y] for p in predictor(image, rect).parts()])
-    show_parts = points[EYES]
-
-    for (i, point) in enumerate(show_parts):
-        x = point[0, 0]
-        y = point[0, 1]
-        cv2.circle(image, (x, y), 1, (0, 255, 255), -1)
-
-cv2.imshow('Face & Eye Area Detection', image)
-# cv2.imwrite('output.png',image) #- image output 저장용
-cv2.waitKey()
-cv2.destroyAllWindows()
+        cv2.imshow('Eyes Detection', image_cv2_yunet)
+        if cv2.waitKey(0) == ord('q') or cv2.waitKey(0) == ord('Q'):
+            cv2.destroyAllWindows()
