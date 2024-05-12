@@ -14,6 +14,7 @@ def template(contents, content, id=None):
   if id != None:
     contextUI = f'''
       <li><a href="/update/{id}/">Update</a></li>
+      <li><form action="/delete/{id}/" method="POST"><input type="submit" value="delete"></form></li>
     '''
   return f'''<!doctype html>
   <html>
@@ -34,7 +35,7 @@ def template(contents, content, id=None):
 def getContents():
   liTags = ''
   for topic in topics:
-    liTags += f'<li><a href="/read/{topic["id"]}/">{topic["title"]}</a><li>'
+    liTags += f'<li><a href="/read/{topic["id"]}/">{topic["title"]}</a></li>'
   return liTags
 
 @app.route('/')
@@ -103,5 +104,13 @@ def update(id):
         break
     url = '/read/'+ str(id) + '/'
     return redirect(url)
+  
+@app.route('/delete/<int:id>/', methods=['POST'])
+def delete(id):
+  for topic in topics:
+    if id == topic['id']:
+      topics.remove(topic)
+      break
+  return redirect('/')
   
 app.run(port=5000, debug=True)
